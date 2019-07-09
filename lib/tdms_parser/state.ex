@@ -24,10 +24,16 @@ defmodule TDMS.Parser.State do
   end
 
   def add_metadata(state, path, properties, raw_data_index) do
+    data =
+      case state.paths[path] do
+        nil -> []
+        result -> result.data
+      end
+
     result = %{
       properties: properties,
       raw_data_index: raw_data_index,
-      data: [],
+      data: data,
       order: map_size(state.paths) + 1
     }
 
