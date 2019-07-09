@@ -1,0 +1,36 @@
+dist: xenial
+language: elixir
+elixir:
+  - 1.7
+  - 1.8
+  - 1.9
+otp_release:
+  - 20.3
+  - 21.3
+  - 22.0
+env:
+  global:
+    # HEX_API_KEY for publishing
+    - secure: "OHneYvecuyG4Ldc9/HIuLAw0adykUr0SpNezhuNF6BVcwUFA9sM1sy+v16bXz2hZq90D+a8+rwSTIa8TRSVsdGNXCheGthznn9U5nBUlXVUITTSxJaTqHaxuh45nANXBFu36nrXcokAnDA6st1ttt2bCPWDjjWl1kGz4s0zVIfYRkrzLIX2DRb+S5gAMriwl7IS3dhm9LULkmatuj1Hk4br5yqZSPNY29cWX5vg2WdSEe/Y2/EY6rTz7QQqV9l3eAuUlWEvdspXJEOVrlc6cfncXGH9GYIhCz96M0/C5fKPOv841/yZV6C+trEavpD6ALWKbjxPGMKzEHwjKWLVzlth4/GbYjm8LHOIQyT219oClQ/GVn12EEc8+Bi19KYY6F/XdQ7H9j5Wo+LGHod5x833T96TB0Jtt6rrLE2WFsWV/FkW6Gc6de6jqOwcREikqa4Ni4LftoL3xuc9yZaGgny9uZojTIrg/7eupHVrPcK/SEpbUzQLVit9JTICSymrtGHfk8apRgfB8u3JZpOeWwzaEiFta6AMjyCmQuk58fqftsFwxo1FfuShFkQsOUnA485ZG2CMxnYUDEuBJyO6mfWhQilP9cqHhl9PFbbOiP356rJqDIYAs5s/OGg+guOpEZPLVho2bSTpaiimlqSOy5Uf2BaxgnckmhTA0bXRW1Ag="
+install:
+  - mix local.rebar --force
+  - mix local.hex --force
+  - mix deps.get
+script:
+  - mix compile
+  - mix format --check-formatted --dry-run
+  # run unit tests
+  - mix test --only unittest
+  # run integration tests
+  - mix test --only integrationtest
+
+jobs:
+  include:
+    - stage: deploy
+      deploy:
+        - provider: script
+          script: mix hex.publish --yes || true
+          skip_cleanup: true
+          on:
+            repo: ni/tdms-parser
+            branch: master
