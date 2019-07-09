@@ -81,7 +81,18 @@ defmodule Test.TDMSWriter do
     stream <> <<255, 255, 255, 255>>
   end
 
+  defp write_raw_data_index(stream, :string, number_of_values, endian) do
+    stream
+    |> write_basic_raw_data_index(:string, number_of_values, endian)
+    |> write_uint64(0, endian)
+  end
+
   defp write_raw_data_index(stream, data_type, number_of_values, endian) do
+    stream
+    |> write_basic_raw_data_index(data_type, number_of_values, endian)
+  end
+
+  defp write_basic_raw_data_index(stream, data_type, number_of_values, endian) do
     stream
     |> Kernel.<>(<<20, 0, 0, 0>>)
     |> write_datatype(data_type, endian)
@@ -137,6 +148,26 @@ defmodule Test.TDMSWriter do
 
   defp write_datatype(stream, :uint64, endian) do
     write_uint32(stream, 0x08, endian)
+  end
+
+  defp write_datatype(stream, :float, endian) do
+    write_uint32(stream, 0x09, endian)
+  end
+
+  defp write_datatype(stream, :double, endian) do
+    write_uint32(stream, 0x0A, endian)
+  end
+
+  defp write_datatype(stream, :boolean, endian) do
+    write_uint32(stream, 0x21, endian)
+  end
+
+  defp write_datatype(stream, :string, endian) do
+    write_uint32(stream, 0x20, endian)
+  end
+
+  defp write_datatype(stream, :timestamp, endian) do
+    write_uint32(stream, 0x44, endian)
   end
 
   defp write_value(stream, :uint32, value, endian) do
