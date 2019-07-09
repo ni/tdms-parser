@@ -30,6 +30,25 @@ defmodule Test.TDMSWriter do
     stream <> data
   end
 
+  def write_previous_raw_data_index(stream, paths, opts \\ []) do
+    endian = Keyword.get(opts, :endian, :little)
+
+    stream
+    |> write_uint32(length(paths), endian)
+    |> write_previous_raw_data_index_for_path(paths, endian)
+  end
+
+  defp write_previous_raw_data_index_for_path(stream, [], _endian) do
+    stream
+  end
+
+  defp write_previous_raw_data_index_for_path(stream, [path | paths], endian) do
+    stream
+    |> write_string(path, endian)
+    |> Kernel.<>(<<0, 0, 0, 0>> <> <<0, 0, 0, 0>>)
+    |> write_previous_raw_data_index_for_path(paths, endian)
+  end
+
   defp write_toc(stream, endian, interleaved) do
     toc =
       case endian do
