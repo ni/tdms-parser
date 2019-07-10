@@ -20,6 +20,8 @@ defmodule TDMS.Parser.ValueParser do
   #  Integers, floats and NI Timestamps can be stored in big or little endian format
   #  depending on the bitmask value in the ToC (Table of Contents).
 
+  alias TDMS.Parser.ParseError
+
   @base_ni_timestamp %DateTime{
     year: 1904,
     month: 1,
@@ -235,7 +237,7 @@ defmodule TDMS.Parser.ValueParser do
   end
 
   defp convert_to_data_type(value) do
-    raise "Unknown data type: #{value}"
+    throw(ParseError.new("Unknown data type: #{value}"))
   end
 
   def data_type_to_property_value(:string) do

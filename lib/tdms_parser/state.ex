@@ -51,9 +51,6 @@ defmodule TDMS.Parser.State do
   end
 
   def add_raw_data_index(state, raw_data_index) do
-    case raw_data_index do
-      nil -> state
-      raw_data_index -> %{state | raw_data_indexes: state.raw_data_indexes ++ [raw_data_index]}
-    end
+    %{state | raw_data_indexes: state.raw_data_indexes ++ [raw_data_index]}
   end
 end

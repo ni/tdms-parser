@@ -25,6 +25,7 @@ defmodule TDMS.Parser do
 
   alias TDMS.Parser.State
   alias TDMS.Parser.ValueParser
+  alias TDMS.Parser.ParseError
 
   @doc """
   Parses the given TDMS file binary data and returns a hierarchical `TDMS.File` structure which
@@ -90,34 +91,31 @@ defmodule TDMS.Parser do
       }
   """
   def parse(stream) do
-    valid_tdms_file = validate_tdms_file(stream)
+    try do
+      {:ok} = validate_tdms_file(stream)
 
-    result = parse(valid_tdms_file, stream, State.new())
+      {:ok, state, _stream} = parse(stream, State.new())
 
-    build_tdms_file_hierarchy(result)
+      build_tdms_file_hierarchy(state)
+    catch
+      :throw, %ParseError{message: message} -> {:error, message}
+    end
   end
 
   defp validate_tdms_file(stream) do
     case parse_lead_in(stream) do
-      {:error, message, _stream} ->
-        {:error, message}
-
       {:ok, :empty, _stream} ->
-        {:error, "Empty file"}
+        throw(ParseError.new("Empty file"))
 
       {:ok, :no_lead_in, _stream} ->
-        {:error, "No TDMS file"}
+        throw(ParseError.new("No TDMS file"))
 
       {:ok, _lead_in, _stream} ->
         {:ok}
     end
   end
 
-  defp parse({:error, message}, stream, _state) do
-    {:error, message, stream}
-  end
-
-  defp parse({:ok}, stream, state) do
+  defp parse(stream, state) do
     result = parse_lead_in(stream)
 
     case result do
@@ -127,13 +125,13 @@ defmodule TDMS.Parser do
 
       {:ok, :no_lead_in, stream} ->
         {state, stream} = parse_raw_data(stream, state)
-        parse({:ok}, stream, state)
+        parse(stream, state)
 
       {:ok, lead_in, stream} ->
         state = State.set_lead_in(state, lead_in)
         {state, stream} = parse_metadata(stream, state)
         {state, stream} = parse_raw_data(stream, state)
-        parse({:ok}, stream, state)
+        parse(stream, state)
     end
   end
 
@@ -190,7 +188,7 @@ defmodule TDMS.Parser do
     case version do
       @tdms_file_version_1 -> {:ok, lead_in, stream}
       @tdms_file_version_2 -> {:ok, lead_in, stream}
-      version -> {:error, "Unsupported TDMS version: #{version}", stream}
+      version -> throw(ParseError.new("Unsupported TDMS version: #{version}"))
     end
   end
 
@@ -200,11 +198,7 @@ defmodule TDMS.Parser do
     parse_paths(stream, number_of_objects, state)
   end
 
-  defp build_tdms_file_hierarchy({:error, message, _stream}) do
-    {:error, message}
-  end
-
-  defp build_tdms_file_hierarchy({:ok, state, _stream}) do
+  defp build_tdms_file_hierarchy(state) do
     grouped_paths =
       Enum.group_by(state.paths, fn {path, _value} -> TDMS.Parser.Path.depth(path) end)
 
@@ -306,17 +300,25 @@ defmodule TDMS.Parser do
   end
 
   defp parse_raw_data_index(_stream, _path, <<69, 12, 00, 00>>, _state) do
-    raise {:error, "DAQmx Format Changing Scaler Parser is not implemented"}
+    throw(ParseError.new("DAQmx Format Changing Scaler Parser is not implemented"))
   end
 
   defp parse_raw_data_index(_stream, _path, <<69, 13, 00, 00>>, _state) do
-    raise {:error, "DAQmx Digital Line Scaler Parser is not implemented"}
+    throw(ParseError.new("DAQmx Digital Line Scaler Parser is not implemented"))
   end
 
   defp parse_raw_data_index(stream, path, _raw_data_index, state) do
     {data_type, stream} = ValueParser.parse_data_type(stream, state.lead_in.endian)
 
     {array_dimension, stream} = ValueParser.parse_value(stream, :uint32, state.lead_in.endian)
+
+    if array_dimension != 1 do
+      throw(
+        ParseError.new(
+          "In TDMS file format version 2.0, 1 is the only valid value for array dimension"
+        )
+      )
+    end
 
     {number_of_values, stream} = ValueParser.parse_value(stream, :uint64, state.lead_in.endian)
 
@@ -403,12 +405,6 @@ defmodule TDMS.Parser do
 
   defp parse_channel_data(stream, nil, _endian, data) do
     {data, stream}
-  end
-
-  defp parse_channel_data(_stream, %{array_dimension: array_dimension}, _endian, _data)
-       when array_dimension != 1 do
-    raise {:error,
-           "In TDMS file format version 2.0, 1 is the only valid value for array dimension"}
   end
 
   defp parse_channel_data(
