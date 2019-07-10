@@ -23,6 +23,8 @@ script:
   - mix test --only unittest
   # run integration tests
   - mix test --only integrationtest
+  # run code coverage
+  - mix coveralls.travis
 
 jobs:
   include:

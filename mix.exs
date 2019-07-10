@@ -11,6 +11,12 @@ defmodule TDMS.Parser.MixProject do
       description: description(),
       package: package(),
       deps: deps(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.travis": :test
+      ],
       source_url: "https://github.com/ni/tdms-parser"
     ]
   end
@@ -39,7 +45,8 @@ defmodule TDMS.Parser.MixProject do
 
   defp deps do
     [
-      {:ex_doc, "~> 0.19", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.0", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.0", only: :test, runtime: false}
     ]
   end
 end
