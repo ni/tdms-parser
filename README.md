@@ -1,6 +1,10 @@
 # TDMS.Parser
 
-[![Hex.pm Version](https://img.shields.io/hexpm/v/tdms_parser.svg?style=flat)](https://hex.pm/packages/tdms_parser) [![Build Status](https://travis-ci.org/ni/tdms-parser.svg?branch=master)](https://travis-ci.org/ni/tdms-parser) [![Coverage Status](https://coveralls.io/repos/github/ni/tdms-parser/badge.svg?branch=master)](https://coveralls.io/github/ni/tdms-parser?branch=master)
+[![Build Status](https://travis-ci.org/ni/tdms-parser.svg?branch=master)](https://travis-ci.org/ni/tdms-parser)
+[![Coverage Status](https://coveralls.io/repos/github/ni/tdms-parser/badge.svg?branch=master)](https://coveralls.io/github/ni/tdms-parser?branch=master)
+[![Hex Version](https://img.shields.io/hexpm/v/tdms_parser.svg?style=flat)](https://hex.pm/packages/tdms_parser)
+[![Hex Docs](http://img.shields.io/badge/hex.pm-docs-green.svg?style=flat)](https://hexdocs.pm/tdms_parser)
+[![License](http://img.shields.io/hexpm/l/tdms_parser.svg?style=flat)](https://github.com/ni/tdms-parser/blob/master/LICENSE)
 
 Parser for NI TDMS files written in Elixir. The TDMS file parser is implemented natively in elixir and comes with zero-dependencies.
 
