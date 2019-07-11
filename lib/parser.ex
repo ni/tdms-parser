@@ -136,8 +136,10 @@ defmodule TDMS.Parser do
   end
 
   defp parse_raw_data(stream, state) do
+    raw_data_indexes = State.get_raw_data_indexes(state)
+
     {results, stream} =
-      parse_data(stream, state.raw_data_indexes, state.lead_in.interleaved, state.lead_in.endian)
+      parse_data(stream, raw_data_indexes, state.lead_in.interleaved, state.lead_in.endian)
 
     state =
       Enum.reduce(results, state, fn {path, data}, state ->
@@ -202,15 +204,16 @@ defmodule TDMS.Parser do
     grouped_paths =
       Enum.group_by(state.paths, fn {path, _value} -> TDMS.Parser.Path.depth(path) end)
 
-    channels = build_channels(grouped_paths[3] || [])
+    channels = build_channels(state, grouped_paths[3] || [])
     groups = build_groups(grouped_paths[2] || [], channels)
     {file_path, %{properties: properties}} = List.first(grouped_paths[1])
     TDMS.File.new(file_path, properties, groups)
   end
 
-  defp build_channels(paths) do
+  defp build_channels(state, paths) do
     sort_paths(paths)
-    |> Enum.map(fn {path, %{raw_data_index: raw_data_index, properties: properties, data: data}} ->
+    |> Enum.map(fn {path, %{raw_data_index: raw_data_index, properties: properties}} ->
+      data = State.get_data(state, path)
       name = TDMS.Parser.Path.get_name(path)
       name_property = TDMS.Property.new("name", :string, name)
 
@@ -226,7 +229,7 @@ defmodule TDMS.Parser do
         name,
         raw_data_index.data_type,
         length(data),
-        [name_property, type_property] ++ properties,
+        [name_property | [type_property | properties]],
         data
       )
     end)
@@ -341,12 +344,12 @@ defmodule TDMS.Parser do
   end
 
   defp parse_properties(stream, 0, _state, properties) do
-    {properties, stream}
+    {Enum.reverse(properties), stream}
   end
 
   defp parse_properties(stream, number_of_properties, state, properties) do
     {property, stream} = parse_property(stream, state)
-    parse_properties(stream, number_of_properties - 1, state, properties ++ [property])
+    parse_properties(stream, number_of_properties - 1, state, [property | properties])
   end
 
   defp parse_property(stream, state) do
@@ -368,6 +371,7 @@ defmodule TDMS.Parser do
   end
 
   defp parse_data_interleaved(stream, [], _endian, results) do
+    results = Enum.map(results, fn {path, data} -> {path, Enum.reverse(data)} end)
     {results, stream}
   end
 
@@ -388,7 +392,7 @@ defmodule TDMS.Parser do
     |> Enum.reduce({results, stream}, fn raw_data_index, {results, stream} ->
       {value, stream} = parse_channel_single_value(stream, raw_data_index.data_type, endian)
       data = results[raw_data_index.path] || []
-      results = Map.put(results, raw_data_index.path, data ++ [value])
+      results = Map.put(results, raw_data_index.path, [value | data])
       {results, stream}
     end)
   end
