@@ -40,9 +40,14 @@ defmodule TDMS.Parser.State do
     %{state | paths: Map.put(state.paths, path, result)}
   end
 
+  def get_data(state, path) do
+    result = state.paths[path]
+    List.flatten(result.data)
+  end
+
   def add_data(state, path, data) do
     result = state.paths[path]
-    result = %{result | data: result.data ++ data}
+    result = %{result | data: [result.data | data]}
 
     %{
       state
@@ -50,7 +55,11 @@ defmodule TDMS.Parser.State do
     }
   end
 
+  def get_raw_data_indexes(state) do
+    Enum.reverse(state.raw_data_indexes)
+  end
+
   def add_raw_data_index(state, raw_data_index) do
-    %{state | raw_data_indexes: state.raw_data_indexes ++ [raw_data_index]}
+    %{state | raw_data_indexes: [raw_data_index | state.raw_data_indexes]}
   end
 end
