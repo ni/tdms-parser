@@ -138,14 +138,56 @@ defmodule TDMS.Parser.ValueParser do
     parse_unsigned_int(stream, 64, endian)
   end
 
-  defp parse_float(stream, size, :big) do
-    <<value::big-signed-float-size(size), stream::binary>> = stream
+  defp parse_float(stream, size, endian) do
+    byte_size = Kernel.trunc(size / 8)
+    <<float_binary::binary-size(byte_size), stream::binary>> = stream
+
+    normalized_binary =
+      float_binary
+      |> pad(8, endian)
+      |> to_little_endian(endian)
+
+    value = do_parse_float(normalized_binary, float_binary, size, endian)
     {value, stream}
   end
 
-  defp parse_float(stream, size, :little) do
-    <<value::little-signed-float-size(size), stream::binary>> = stream
-    {value, stream}
+  defp do_parse_float(<<0, 0, 0, 0, 0, 0, 0xF0, 0xFF>>, _float_binary, _size, _endian) do
+    :neg_infinity
+  end
+
+  defp do_parse_float(<<0, 0, 0, 0, 0, 0, 0xF0, 0x7F>>, _float_binary, _size, _endian) do
+    :infinity
+  end
+
+  defp do_parse_float(<<0, 0, 0, 0, 0, 0, 0xF8, 0x7F>>, _float_binary, _size, _endian) do
+    :NaN
+  end
+
+  defp do_parse_float(_, float_binary, size, :little) do
+    <<value::little-signed-float-size(size)>> = float_binary
+    value
+  end
+
+  defp do_parse_float(_, float_binary, size, :big) do
+    <<value::big-signed-float-size(size)>> = float_binary
+    value
+  end
+
+  defp pad(binary, length, endian) do
+    zeros = :binary.copy(<<0>>, length - byte_size(binary))
+
+    case endian do
+      :little -> zeros <> binary
+      :big -> binary <> zeros
+    end
+  end
+
+  defp to_little_endian(binary, :little) do
+    binary
+  end
+
+  defp to_little_endian(binary, :big) do
+    binary |> :binary.decode_unsigned(:big) |> :binary.encode_unsigned(:little)
   end
 
   defp parse_unsigned_int(stream, size, :big) do
