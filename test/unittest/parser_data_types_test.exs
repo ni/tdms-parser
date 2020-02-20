@@ -90,6 +90,21 @@ defmodule Test.UnitTest.TDMSParserDataTypesTest do
       <<191, 213, 215, 68, 246, 211, 177, 247, 191, 123, 215, 68, 236, 200, 100, 247>>,
       [-0.3412640009326248, -0.0067970936184107355]
     ],
+    # floating-point (infinity)
+    [:float, :little, <<0, 0, 0xF0, 0x7F>>, [:infinity]],
+    [:double, :little, <<0, 0, 0, 0, 0, 0, 0xF0, 0x7F>>, [:infinity]],
+    [:float, :big, <<0x7F, 0xF0, 0, 0>>, [:infinity]],
+    [:double, :big, <<0x7F, 0xF0, 0, 0, 0, 0, 0, 0>>, [:infinity]],
+    # floating-point (negative infinity)
+    [:float, :little, <<0, 0, 0xF0, 0xFF>>, [:neg_infinity]],
+    [:double, :little, <<0, 0, 0, 0, 0, 0, 0xF0, 0xFF>>, [:neg_infinity]],
+    [:float, :big, <<0xFF, 0xF0, 0, 0>>, [:neg_infinity]],
+    [:double, :big, <<0xFF, 0xF0, 0, 0, 0, 0, 0, 0>>, [:neg_infinity]],
+    # floating-point (NaN)
+    [:float, :little, <<0, 0, 0xF8, 0x7F>>, [:NaN]],
+    [:double, :little, <<0, 0, 0, 0, 0, 0, 0xF8, 0x7F>>, [:NaN]],
+    [:float, :big, <<0x7F, 0xF8, 0, 0>>, [:NaN]],
+    [:double, :big, <<0x7F, 0xF8, 0, 0, 0, 0, 0, 0>>, [:NaN]],
 
     # boolean
     [:boolean, :little, <<1, 0>>, [true, false]],
@@ -186,7 +201,7 @@ defmodule Test.UnitTest.TDMSParserDataTypesTest do
           path: "/'my-group'/'my-channel'",
           properties: [],
           data_type: @data_type,
-          number_of_values: 2
+          number_of_values: length(@output)
         }
       ]
 
